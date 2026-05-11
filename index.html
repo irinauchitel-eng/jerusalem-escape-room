@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>חדר הבריחה הירושלמי · C# · דף תלמיד</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #B8962E;
+    --gold-light: #D4AF50;
+    --gold-pale: #F5EDD3;
+    --ink: #1A1208;
+    --ink-mid: #3D2E10;
+    --ink-light: #7A6040;
+    --parchment: #FBF6EC;
+    --parchment-dark: #F0E8D0;
+    --stone: #E8DEC8;
+    --blue-q: #1B3A6B;
+    --blue-q-light: #E8EEF8;
+    --teal-q: #0D4A3A;
+    --teal-q-light: #E6F2EE;
+    --coral-q: #7A2A18;
+    --coral-q-light: #F7EBE8;
+    --purple-q: #3A1A6B;
+    --purple-q-light: #EDE8F5;
+    --success: #1B5E20;
+    --success-bg: #E8F5E9;
+    --wrong: #7A1212;
+    --wrong-bg: #FDECEA;
+    --radius: 10px;
+    --shadow: 0 2px 12px rgba(26,18,8,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Frank Ruhl Libre', serif;
+    background: var(--parchment);
+    color: var(--ink);
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  /* subtle stone texture via repeating pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(184,150,46,0.03) 0px,
+      rgba(184,150,46,0.03) 1px,
+      transparent 1px,
+      transparent 40px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    padding: 2.5rem 2rem 2rem;
+    border-bottom: 2px solid var(--gold);
+    margin-bottom: 2rem;
+    position: relative;
+  }
+  .header::before, .header::after {
+    content: '✦';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold-light);
+    font-size: 20px;
+  }
+  .header::before { right: 1.5rem; }
+  .header::after  { left: 1.5rem; }
+
+  .header-tag {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-family: 'Source Code Pro', monospace;
+  }
+  .header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .header h1 span { color: var(--gold); }
+  .header p {
+    font-size: 15px;
+    color: var(--ink-light);
+    font-weight: 300;
+  }
+
+  /* ── SCORE BANNER ── */
+  .score-banner {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .score-chip {
+    background: var(--parchment-dark);
+    border: 1px solid var(--stone);
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 14px;
+    color: var(--ink-mid);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .score-chip .val {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--gold);
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--ink-light);
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--stone);
+  }
+
+  /* ── QUESTION CARD ── */
+  .q-card {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--stone);
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  .q-card:hover { box-shadow: 0 4px 20px rgba(26,18,8,0.13); }
+
+  .q-header {
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--stone);
+  }
+  .q-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .q-meta { flex: 1; }
+  .q-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .q-topic {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    color: var(--ink-light);
+  }
+  .q-pts {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--parchment-dark);
+    border: 1px solid var(--stone);
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: var(--ink-mid);
+  }
+  .q-pts .earned {
+    color: var(--gold);
+    font-size: 16px;
+  }
+
+  /* quarter colors */
+  .jewish   { background: var(--blue-q-light);   color: var(--blue-q); }
+  .muslim   { background: var(--teal-q-light);   color: var(--teal-q); }
+  .christian{ background: var(--coral-q-light);  color: var(--coral-q); }
+  .armenian { background: var(--purple-q-light); color: var(--purple-q); }
+
+  .q-body { padding: 1.25rem 1.5rem; }
+
+  .q-prompt {
+    font-size: 14px;
+    color: var(--ink-mid);
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+
+  pre.code {
+    background: #1A1208;
+    color: #F5EDD3;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+    direction: ltr;
+    text-align: left;
+    border-right: 3px solid var(--gold);
+  }
+  pre.code .kw { color: #78C5D6; }
+  pre.code .ty { color: #B5D4F4; }
+  pre.code .st { color: #9FE1CB; }
+  pre.code .cm { color: #7A6040; font-style: italic; }
+  pre.code .nm { color: #F0997B; }
+
+  .sub-prompt {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0.75rem 0 0.5rem;
+  }
+
+  /* ── OPTIONS ── */
+  .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+  .opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--stone);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.18s;
+    background: var(--parchment);
+    font-size: 14px;
+    color: var(--ink);
+    text-align: right;
+    direction: rtl;
+  }
+  .opt:hover { border-color: var(--gold-light); background: var(--gold-pale); }
+  .opt.selected { border-color: var(--gold); background: var(--gold-pale); }
+  .opt.correct  { border-color: var(--success); background: var(--success-bg); color: var(--success); }
+  .opt.wrong    { border-color: var(--wrong);   background: var(--wrong-bg);   color: var(--wrong); }
+  .opt-letter {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--stone);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+    color: var(--ink-mid);
+  }
+  .opt.correct .opt-letter { background: var(--success); color: white; }
+  .opt.wrong   .opt-letter { background: var(--wrong);   color: white; }
+  .opt.selected .opt-letter { background: var(--gold); color: white; }
+  .opt-text { flex: 1; font-family: 'Source Code Pro', monospace; font-size: 13px; direction: rtl; }
+
+  /* ── FEEDBACK ── */
+  .feedback-bar {
+    display: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 0.75rem;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .feedback-bar.show { display: flex; }
+  .feedback-bar.ok  { background: var(--success-bg); color: var(--success); border: 1px solid #A5D6A7; }
+  .feedback-bar.bad { background: var(--wrong-bg);   color: var(--wrong);   border: 1px solid #EF9A9A; }
+  .feedback-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── EXPLANATION ── */
+  .explanation {
+    display: none;
+    background: var(--parchment-dark);
+    border-right: 3px solid var(--gold);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.65;
+  }
+  .explanation.show { display: block; }
+  .explanation strong { color: var(--gold); }
+
+  /* ── HINT ── */
+  .hint-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  .hint-btn {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 13px;
+    padding: 5px 12px;
+    border: 1px solid var(--stone);
+    border-radius: 6px;
+    background: var(--parchment);
+    cursor: pointer;
+    color: var(--ink-light);
+    transition: all 0.15s;
+  }
+  .hint-btn:hover { border-color: var(--gold-light); color: var(--gold); }
+  .hint-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .hint-box {
+    display: none;
+    background: #FAEEDA;
+    border: 1px solid #EF9F27;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #633806;
+    margin-bottom: 0.75rem;
+  }
+  .hint-box.show { display: block; }
+  .pts-tag {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    color: var(--ink-light);
+  }
+
+  /* ── SUBMIT ── */
+  .submit-btn {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 15px;
+    padding: 9px 22px;
+    background: var(--gold);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.18s;
+    margin-top: 4px;
+  }
+  .submit-btn:hover { background: var(--gold-light); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── FINAL SECTION ── */
+  .final-card {
+    background: white;
+    border-radius: var(--radius);
+    border: 2px solid var(--gold);
+    box-shadow: var(--shadow);
+    padding: 2rem;
+    text-align: center;
+    margin-top: 2rem;
+  }
+  .final-title { font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 0.5rem; }
+  .final-score {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 64px;
+    font-weight: 600;
+    color: var(--gold);
+    line-height: 1;
+    margin: 1rem 0 0.25rem;
+  }
+  .final-sub { font-size: 14px; color: var(--ink-light); margin-bottom: 1.5rem; }
+  .breakdown {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    max-width: 420px;
+    margin: 0 auto 1.5rem;
+    text-align: right;
+  }
+  .bd-row {
+    background: var(--parchment-dark);
+    border: 1px solid var(--stone);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .bd-pts {
+    font-family: 'Source Code Pro', monospace;
+    font-weight: 600;
+    color: var(--gold);
+  }
+  .print-btn {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 15px;
+    padding: 10px 28px;
+    background: var(--ink);
+    color: var(--gold-pale);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .print-btn:hover { background: var(--ink-mid); }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; }
+    body::before { display: none; }
+    .hint-btn, .print-btn, .submit-btn { display: none; }
+    .q-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+    .final-card { break-inside: avoid; }
+    .score-banner { display: none; }
+  }
+
+  /* ── SEPARATOR ── */
+  .ornament {
+    text-align: center;
+    color: var(--gold-light);
+    font-size: 18px;
+    margin: 2rem 0;
+    letter-spacing: 12px;
+  }
+
+  /* answer key toggle */
+  .key-toggle { display: none; }
+
+  .check-icon { color: var(--success); font-size: 16px; }
+  .x-icon { color: var(--wrong); font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-tag">מגמת הנדסת אלקטרוניקה ומחשבים · כיתה יא · יסודות התכנות C#</div>
+    <h1>חדר הבריחה הירושלמי <span>— דף תלמיד</span></h1>
+    <p>יום ירושלים · 4 רבעים · 40 נקודות</p>
+  </div>
+
+  <!-- SCORE BANNER -->
+  <div class="score-banner">
+    <div class="score-chip">רבעים שנפתחו <span class="val" id="done-ct">0</span><span style="font-size:13px;color:var(--ink-light)">/4</span></div>
+    <div class="score-chip">ניקוד כולל <span class="val" id="total-score">0</span><span style="font-size:13px;color:var(--ink-light)">/40</span></div>
+    <div class="score-chip">שם התלמיד: <span class="val" id="student-name" style="font-size:14px;font-family:inherit;min-width:80px" contenteditable="true" style="outline:none">___________</span></div>
+  </div>
+
+  <!-- QUESTIONS -->
+  <div class="section-label">חידות הרבעים</div>
+
+  <!-- Q1: JEWISH -->
+  <div class="q-card" id="card-0">
+    <div class="q-header">
+      <div class="q-icon jewish">✡</div>
+      <div class="q-meta">
+        <div class="q-name">הרובע היהודי</div>
+        <div class="q-topic">פרק 5 — מחלקה, בנאי, תכונות, פעולות</div>
+      </div>
+      <div class="q-pts"><span class="earned" id="pts-0">—</span> / 10</div>
+      <button class="key-toggle" onclick="toggleKey(0)">מפתח</button>
+    </div>
+    <div class="q-body">
+      <p class="q-prompt">קרא את הגדרת המחלקה:</p>
+      <pre class="code"><span class="kw">public class</span> <span class="ty">JewishQuarter</span>
+{
+    <span class="kw">public</span> <span class="ty">string</span> <span class="nm">SiteName</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="ty">int</span>    <span class="nm">YearBuilt</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="ty">int</span>    <span class="nm">Visitors</span>  { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    <span class="kw">public</span> <span class="ty">JewishQuarter</span>(<span class="ty">string</span> name, <span class="ty">int</span> year, <span class="ty">int</span> visitors)
+    {
+        <span class="nm">SiteName</span>  = name;
+        <span class="nm">YearBuilt</span> = year;
+        <span class="nm">Visitors</span>  = visitors;
+    }
+
+    <span class="kw">public</span> <span class="ty">string</span> <span class="nm">GetInfo</span>()
+    {
+        <span class="kw">return</span> <span class="nm">SiteName</span> + <span class="st">" - "</span> + <span class="nm">YearBuilt</span>;
+    }
+}</pre>
+      <p class="sub-prompt">מה יודפס בהרצת הקוד הבא?</p>
+      <pre class="code"><span class="ty">JewishQuarter</span> k = <span class="kw">new</span> <span class="ty">JewishQuarter</span>(<span class="st">"הכותל"</span>, 70, 3500000);
+<span class="ty">Console</span>.WriteLine(k.<span class="nm">GetInfo</span>());
+<span class="ty">Console</span>.WriteLine(k.<span class="nm">Visitors</span> &gt; 1000000);</pre>
+
+      <div class="hint-row">
+        <span class="pts-tag">10 נק׳ | −2 נק׳ לרמז</span>
+        <button class="hint-btn" id="hint-btn-0" onclick="showHint(0)">💡 רמז</button>
+      </div>
+      <div class="hint-box" id="hint-0">עקבו אחרי הערכים שמועברים לבנאי בסדרם: name=<code>"הכותל"</code>, year=<code>70</code>, visitors=<code>3500000</code>. מה מחזירה <code>GetInfo()</code>?</div>
+
+      <div class="options" id="opts-0">
+        <div class="opt" onclick="select(0,0)"><div class="opt-letter">א</div><div class="opt-text">הכותל - 70<br>True</div></div>
+        <div class="opt" onclick="select(0,1)"><div class="opt-letter">ב</div><div class="opt-text">הכותל - 1967<br>True</div></div>
+        <div class="opt" onclick="select(0,2)"><div class="opt-letter">ג</div><div class="opt-text">הכותל - 70<br>3500000</div></div>
+        <div class="opt" onclick="select(0,3)"><div class="opt-letter">ד</div><div class="opt-text">שגיאת קומפילציה</div></div>
+      </div>
+
+      <div class="feedback-bar" id="fb-0"></div>
+      <div class="explanation" id="exp-0">
+        <strong>הסבר:</strong> הבנאי מקבל <code>year=70</code> ולכן <code>YearBuilt=70</code>. הפעולה <code>GetInfo()</code> מחזירה <code>"הכותל - 70"</code>. <code>Visitors=3500000 &gt; 1000000</code> → <code>True</code>. תשובה נכונה: <strong>א</strong>.
+      </div>
+      <br>
+      <button class="submit-btn" id="sub-0" onclick="submit(0)" disabled>אשר תשובה</button>
+    </div>
+  </div>
+
+  <!-- Q2: MUSLIM -->
+  <div class="q-card" id="card-1">
+    <div class="q-header">
+      <div class="q-icon muslim">☽</div>
+      <div class="q-meta">
+        <div class="q-name">הרובע המוסלמי</div>
+        <div class="q-topic">פרק 4 + 8 — לולאת for, מערך, Length</div>
+      </div>
+      <div class="q-pts"><span class="earned" id="pts-1">—</span> / 10</div>
+      <button class="key-toggle" onclick="toggleKey(1)">מפתח</button>
+    </div>
+    <div class="q-body">
+      <p class="q-prompt">מה יודפס בהרצת הקוד הבא?</p>
+      <pre class="code"><span class="ty">string</span>[] sites = {<span class="st">"הר הבית"</span>, <span class="st">"שוק"</span>, <span class="st">"שער שכם"</span>, <span class="st">"מסגד"</span>};
+<span class="ty">int</span> count = 0;
+
+<span class="kw">for</span> (<span class="ty">int</span> i = 0; i &lt; sites.Length; i++)
+{
+    <span class="kw">if</span> (sites[i].Length &gt; 4)
+        count++;
+}
+
+<span class="ty">Console</span>.WriteLine(count);</pre>
+
+      <div class="hint-row">
+        <span class="pts-tag">10 נק׳ | −2 נק׳ לרמז</span>
+        <button class="hint-btn" id="hint-btn-1" onclick="showHint(1)">💡 רמז</button>
+      </div>
+      <div class="hint-box" id="hint-1">ספרו את אורך כל מחרוזת בנפרד. שימו לב: התנאי הוא <code>Length &gt; 4</code> (גדול ממש, לא שווה).</div>
+
+      <div class="options" id="opts-1">
+        <div class="opt" onclick="select(1,0)"><div class="opt-letter">א</div><div class="opt-text">1</div></div>
+        <div class="opt" onclick="select(1,1)"><div class="opt-letter">ב</div><div class="opt-text">2</div></div>
+        <div class="opt" onclick="select(1,2)"><div class="opt-letter">ג</div><div class="opt-text">3</div></div>
+        <div class="opt" onclick="select(1,3)"><div class="opt-letter">ד</div><div class="opt-text">4</div></div>
+      </div>
+
+      <div class="feedback-bar" id="fb-1"></div>
+      <div class="explanation" id="exp-1">
+        <strong>הסבר:</strong> "הר הבית" = 7 תווים ✓ | "שוק" = 3 ✗ | "שער שכם" = 7 ✓ | "מסגד" = 4 (לא גדול מ-4) ✗. <br>count = <strong>2</strong>. תשובה נכונה: <strong>ב</strong>.
+      </div>
+      <br>
+      <button class="submit-btn" id="sub-1" onclick="submit(1)" disabled>אשר תשובה</button>
+    </div>
+  </div>
+
+  <!-- Q3: CHRISTIAN -->
+  <div class="q-card" id="card-2">
+    <div class="q-header">
+      <div class="q-icon christian">✝</div>
+      <div class="q-meta">
+        <div class="q-name">הרובע הנוצרי</div>
+        <div class="q-topic">פרק 10 — List&lt;string&gt;: Add, Insert, Remove, Count</div>
+      </div>
+      <div class="q-pts"><span class="earned" id="pts-2">—</span> / 10</div>
+      <button class="key-toggle" onclick="toggleKey(2)">מפתח</button>
+    </div>
+    <div class="q-body">
+      <p class="q-prompt">מה יודפס?</p>
+      <pre class="code"><span class="ty">List</span>&lt;<span class="ty">string</span>&gt; sites = <span class="kw">new</span> <span class="ty">List</span>&lt;<span class="ty">string</span>&gt;();
+sites.<span class="nm">Add</span>(<span class="st">"כנסיית הקבר"</span>);
+sites.<span class="nm">Add</span>(<span class="st">"ויה דולורוסה"</span>);
+sites.<span class="nm">Add</span>(<span class="st">"כנסיית הלידה"</span>);
+sites.<span class="nm">Insert</span>(1, <span class="st">"כנסיית הגויים"</span>);
+sites.<span class="nm">Remove</span>(<span class="st">"ויה דולורוסה"</span>);
+
+<span class="ty">Console</span>.WriteLine(sites.Count);
+<span class="ty">Console</span>.WriteLine(sites[1]);</pre>
+
+      <div class="hint-row">
+        <span class="pts-tag">10 נק׳ | −2 נק׳ לרמז</span>
+        <button class="hint-btn" id="hint-btn-2" onclick="showHint(2)">💡 רמז</button>
+      </div>
+      <div class="hint-box" id="hint-2">כתבו על דף את תוכן הרשימה אחרי <strong>כל</strong> פעולה בנפרד: Add×3, Insert(1,...), Remove(...).</div>
+
+      <div class="options" id="opts-2">
+        <div class="opt" onclick="select(2,0)"><div class="opt-letter">א</div><div class="opt-text">3<br>ויה דולורוסה</div></div>
+        <div class="opt" onclick="select(2,1)"><div class="opt-letter">ב</div><div class="opt-text">3<br>כנסיית הגויים</div></div>
+        <div class="opt" onclick="select(2,2)"><div class="opt-letter">ג</div><div class="opt-text">4<br>כנסיית הגויים</div></div>
+        <div class="opt" onclick="select(2,3)"><div class="opt-letter">ד</div><div class="opt-text">2<br>כנסיית הלידה</div></div>
+      </div>
+
+      <div class="feedback-bar" id="fb-2"></div>
+      <div class="explanation" id="exp-2">
+        <strong>מעקב:</strong><br>
+        אחרי Add×3: [כנסיית הקבר, ויה דולורוסה, כנסיית הלידה]<br>
+        אחרי Insert(1,...): [כנסיית הקבר, <u>כנסיית הגויים</u>, ויה דולורוסה, כנסיית הלידה]<br>
+        אחרי Remove(...): [כנסיית הקבר, כנסיית הגויים, כנסיית הלידה]<br>
+        Count=3, sites[1]="כנסיית הגויים". תשובה נכונה: <strong>ב</strong>.
+      </div>
+      <br>
+      <button class="submit-btn" id="sub-2" onclick="submit(2)" disabled>אשר תשובה</button>
+    </div>
+  </div>
+
+  <!-- Q4: ARMENIAN -->
+  <div class="q-card" id="card-3">
+    <div class="q-header">
+      <div class="q-icon armenian">⛪</div>
+      <div class="q-meta">
+        <div class="q-name">הרובע הארמני</div>
+        <div class="q-topic">פרקים 6 + 9 — טיפוס מורכב, static, לולאת for</div>
+      </div>
+      <div class="q-pts"><span class="earned" id="pts-3">—</span> / 10</div>
+      <button class="key-toggle" onclick="toggleKey(3)">מפתח</button>
+    </div>
+    <div class="q-body">
+      <p class="q-prompt">נתונות שתי מחלקות:</p>
+      <pre class="code"><span class="kw">public class</span> <span class="ty">Site</span>
+{
+    <span class="kw">public</span> <span class="ty">string</span> <span class="nm">Name</span>     { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="ty">int</span>    <span class="nm">Visitors</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="ty">Site</span>(<span class="ty">string</span> n, <span class="ty">int</span> v) { <span class="nm">Name</span>=n; <span class="nm">Visitors</span>=v; }
+}
+
+<span class="kw">public class</span> <span class="ty">Quarter</span>
+{
+    <span class="kw">public</span> <span class="ty">List</span>&lt;<span class="ty">Site</span>&gt; <span class="nm">Sites</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="ty">Quarter</span>() { <span class="nm">Sites</span> = <span class="kw">new</span> <span class="ty">List</span>&lt;<span class="ty">Site</span>&gt;(); }
+
+    <span class="kw">public static</span> <span class="ty">int</span> <span class="nm">TotalVisitors</span>(<span class="ty">Quarter</span> q)
+    {
+        <span class="ty">int</span> total = 0;
+        <span class="kw">for</span> (<span class="ty">int</span> i = 0; i &lt; q.<span class="nm">Sites</span>.Count; i++)
+            total += q.<span class="nm">Sites</span>[i].<span class="nm">Visitors</span>;
+        <span class="kw">return</span> total;
+    }
+}</pre>
+      <p class="sub-prompt">מה יודפס?</p>
+      <pre class="code"><span class="ty">Quarter</span> arm = <span class="kw">new</span> <span class="ty">Quarter</span>();
+arm.<span class="nm">Sites</span>.<span class="nm">Add</span>(<span class="kw">new</span> <span class="ty">Site</span>(<span class="st">"מנזר סנט ג'יימס"</span>, 80000));
+arm.<span class="nm">Sites</span>.<span class="nm">Add</span>(<span class="kw">new</span> <span class="ty">Site</span>(<span class="st">"ארמון האבנים"</span>,    45000));
+<span class="ty">Console</span>.WriteLine(<span class="ty">Quarter</span>.<span class="nm">TotalVisitors</span>(arm));</pre>
+
+      <div class="hint-row">
+        <span class="pts-tag">10 נק׳ | −2 נק׳ לרמז</span>
+        <button class="hint-btn" id="hint-btn-3" onclick="showHint(3)">💡 רמז</button>
+      </div>
+      <div class="hint-box" id="hint-3">פעולה <code>static</code> מזומנת על שם המחלקה: <code>Quarter.TotalVisitors(arm)</code> — זה חוקי. עברו על הרשימה וחברו את ה-<code>Visitors</code>.</div>
+
+      <div class="options" id="opts-3">
+        <div class="opt" onclick="select(3,0)"><div class="opt-letter">א</div><div class="opt-text">80000</div></div>
+        <div class="opt" onclick="select(3,1)"><div class="opt-letter">ב</div><div class="opt-text">45000</div></div>
+        <div class="opt" onclick="select(3,2)"><div class="opt-letter">ג</div><div class="opt-text">125000</div></div>
+        <div class="opt" onclick="select(3,3)"><div class="opt-letter">ד</div><div class="opt-text">שגיאת קומפילציה — TotalVisitors היא static</div></div>
+      </div>
+
+      <div class="feedback-bar" id="fb-3"></div>
+      <div class="explanation" id="exp-3">
+        <strong>הסבר:</strong> <code>static</code> מזומנת על שם המחלקה — זה חוקי ונכון. הלולאה <code>for</code> רצה על כל אברי <code>Sites</code> לפי אינדקס ומחברת: 80000 + 45000 = <strong>125000</strong>. תשובה נכונה: <strong>ג</strong>.
+      </div>
+      <br>
+      <button class="submit-btn" id="sub-3" onclick="submit(3)" disabled>אשר תשובה</button>
+    </div>
+  </div>
+
+  <div class="ornament">✦ ✦ ✦</div>
+
+  <!-- FINAL -->
+  <div class="final-card" id="final-card" style="display:none">
+    <div style="font-size:32px;margin-bottom:8px">🏛</div>
+    <div class="final-title">ירושלים שוחררה!</div>
+    <div class="final-score" id="f-score">0</div>
+    <div class="final-sub">נקודות מתוך 40</div>
+    <div class="breakdown" id="breakdown"></div>
+    <button class="print-btn" onclick="window.print()">🖨 הדפס דף תשובות</button>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<script>
+const CORRECT = [0, 1, 1, 2];
+const NAMES   = ['הרובע היהודי','הרובע המוסלמי','הרובע הנוצרי','הרובע הארמני'];
+
+let selected  = [null, null, null, null];
+let submitted = [false, false, false, false];
+let hintUsed  = [false, false, false, false];
+let scores    = [null, null, null, null];
+
+function select(q, opt) {
+  if (submitted[q]) return;
+  selected[q] = opt;
+  const opts = document.querySelectorAll(`#opts-${q} .opt`);
+  opts.forEach((el, i) => {
+    el.classList.toggle('selected', i === opt);
+  });
+  document.getElementById(`sub-${q}`).disabled = false;
+}
+
+function submit(q) {
+  if (submitted[q] || selected[q] === null) return;
+  submitted[q] = true;
+  const correct = selected[q] === CORRECT[q];
+  const pts = correct ? (hintUsed[q] ? 8 : 10) : 0;
+  scores[q] = pts;
+
+  const opts = document.querySelectorAll(`#opts-${q} .opt`);
+  opts.forEach((el, i) => {
+    el.onclick = null;
+    el.classList.remove('selected');
+    if (i === CORRECT[q])  el.classList.add('correct');
+    if (i === selected[q] && !correct) el.classList.add('wrong');
+  });
+
+  const fb = document.getElementById(`fb-${q}`);
+  fb.classList.add('show');
+  if (correct) {
+    fb.classList.add('ok');
+    fb.innerHTML = `<span class="feedback-icon">✓</span> נכון! +${pts} נקודות${hintUsed[q] ? ' (ניכוי רמז)' : ''}`;
+  } else {
+    fb.classList.add('bad');
+    fb.innerHTML = `<span class="feedback-icon">✗</span> לא נכון. קרא את ההסבר למטה.`;
+  }
+
+  document.getElementById(`exp-${q}`).classList.add('show');
+  document.getElementById(`sub-${q}`).disabled = true;
+  document.getElementById(`hint-btn-${q}`).disabled = true;
+
+  document.getElementById(`pts-${q}`).textContent = pts;
+
+  updateTotals();
+  checkAllDone();
+}
+
+function showHint(q) {
+  if (submitted[q]) return;
+  hintUsed[q] = true;
+  document.getElementById(`hint-${q}`).classList.add('show');
+  document.getElementById(`hint-btn-${q}`).disabled = true;
+}
+
+function toggleKey(q) { /* disabled in student version */ }
+
+function updateTotals() {
+  let total = 0, done = 0;
+  scores.forEach(s => { if (s !== null) { total += s; done++; } });
+  document.getElementById('total-score').textContent = total;
+  document.getElementById('done-ct').textContent = done;
+}
+
+function checkAllDone() {
+  if (submitted.every(Boolean)) {
+    document.getElementById('final-card').style.display = 'block';
+    let total = scores.reduce((a,b) => a + b, 0);
+    document.getElementById('f-score').textContent = total;
+    const bd = document.getElementById('breakdown');
+    bd.innerHTML = scores.map((s,i) => `
+      <div class="bd-row">
+        <span>${NAMES[i]}</span>
+        <span class="bd-pts">${s}/10</span>
+      </div>`).join('');
+    document.getElementById('final-card').scrollIntoView({behavior:'smooth'});
+  }
+}
+</script>
+</body>
+</html>
